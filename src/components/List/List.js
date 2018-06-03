@@ -155,7 +155,7 @@ class List extends Component {
 											if (loading) return <Dimmer active loader />;
 
 											const dataFieldName = getDataQueryName(type);
-											const dataArray = data ? data[dataFieldName] : [];
+											const dataArray = data && data[dataFieldName] ? data[dataFieldName] : [];
 
 											return (
 												<React.Fragment>

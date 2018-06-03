@@ -54,17 +54,27 @@ class DataForm extends Component {
 		}).isRequired,
 	};
 
+	validateValues = field => {
+		if (field.isRequired && (!field.value || field.value === '')) {
+			return 'Field is required';
+		}
+		if (field.type === 'Int' && !Number.isInteger(Number(field.value))) {
+			return 'Not a number';
+		}
+		if (field.type === 'Float' && isNaN(Number(field.value))) {
+			return 'Not a float';
+		}
+
+		return null;
+	};
+
 	onFieldChange = (name, value) => {
 		const { formData } = this.state;
 
 		const updatedFormData = formData.map(field => {
 			if (field.name === name) {
 				field.value = value;
-				if (field.isRequired && (!value || value === '')) {
-					field.error = 'Field is required';
-				} else {
-					field.error = null;
-				}
+				field.error = this.validateValues(field);
 			}
 
 			return field;
@@ -82,10 +92,7 @@ class DataForm extends Component {
 			id,
 		} = this.props;
 		const validatedFormData = formData.map(field => {
-			if (field.isRequired && (!field.value || field.value === '')) {
-				field.error = 'Field is required';
-			}
-
+			field.error = this.validateValues(field);
 			return field;
 		});
 		const isFormValid = validatedFormData.filter(field => field.error).length === 0;
@@ -113,6 +120,8 @@ class DataForm extends Component {
 	buildField = field => {
 		switch (field.type) {
 			case 'String':
+			case 'Int':
+			case 'Float':
 				return (
 					<Form.Input
 						name={field.name}
