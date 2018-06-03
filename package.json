@@ -1,0 +1,37 @@
+{
+	"name": "prisma-admin",
+	"version": "0.1.0",
+	"engines": {
+		"node": ">=8"
+	},
+	"bin": "./index.js",
+	"license": "MIT",
+	"homepage": "https://github.com/somus/prisma-admin#readme",
+	"bugs": {
+		"url": "https://github.com/somus/prisma-admin/issues"
+	},
+	"dependencies": {
+		"apollo-client-preset": "^1.0.8",
+		"chalk": "^2.4.1",
+		"dayjs": "^1.6.4",
+		"graphql": "^0.13.2",
+		"graphql-tag": "^2.9.2",
+		"lodash.isplainobject": "^4.0.6",
+		"minimist": "^1.2.0",
+		"react": "^16.3.2",
+		"react-apollo": "^2.1.4",
+		"react-dom": "^16.3.2",
+		"react-router": "^4.2.0",
+		"react-router-dom": "^4.2.2",
+		"react-scripts": "1.1.4",
+		"serve": "^7.2.0",
+		"tabler-react": "^1.6.0"
+	},
+	"scripts": {
+		"start": "react-scripts start",
+		"build": "react-scripts build",
+		"serve": "serve -l 5000 -s build",
+		"test": "react-scripts test --env=jsdom",
+		"eject": "react-scripts eject"
+	}
+}
