@@ -25,7 +25,7 @@ const EditForm = props => {
 
 EditForm.propTypes = {
 	type: PropTypes.object.isRequired,
-	id: PropTypes.object.isRequired,
+	id: PropTypes.string.isRequired,
 };
 
 export default EditForm;

@@ -101,7 +101,7 @@ class DataForm extends Component {
 
 		if (isFormValid) {
 			const variables = validatedFormData.reduce((r, field) => {
-				r[field.name] = field.value;
+				r[field.name] = ['Int', 'Float'].includes(field.type) ? Number(field.value) : field.value;
 				return r;
 			}, Object.create(null));
 
