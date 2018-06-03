@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import isPlainObject from 'lodash.isplainobject';
 
-import { Page, Icon, Grid, Card, Text, Table, Button, Dimmer } from 'tabler-react';
+import { Page, Icon, Card, Text, Table, Button, Dimmer, Alert } from 'tabler-react';
 import ListFooter from './ListFooter';
 
 import {
@@ -99,26 +99,20 @@ class List extends Component {
 	};
 
 	buildTableContent = (fields, data) =>
-		data.map(d => {
-			const dataRows = [];
-			fields.forEach(field => {
-				dataRows.push({ content: this.buildRowContent(field, d[field.name]) });
-			});
-
-			return [
-				...dataRows,
-				{
-					alignContent: 'right',
-					content: (
-						<React.Fragment>
-							<Link to={`/model/${camelCase(this.props.type.name)}/edit/${d.id}`}>
-								<i style={{ color: '#495057' }} className="fe fe-edit" />
-							</Link>
-							<i className="fe fe-trash ml-2" onClick={() => this.deleteData(d.id)} />
-						</React.Fragment>
-					),
-				},
-			];
+		data.map((d, i) => {
+			return (
+				<Table.Row key={i}>
+					{fields.map(field => (
+						<Table.Col key={field.name}>{this.buildRowContent(field, d[field.name])}</Table.Col>
+					))}
+					<Table.Col alignContent="right">
+						<Link to={`/model/${camelCase(this.props.type.name)}/edit/${d.id}`}>
+							<i style={{ color: '#495057' }} className="fe fe-edit" />
+						</Link>
+						<i className="fe fe-trash ml-2" onClick={() => this.deleteData(d.id)} />
+					</Table.Col>
+				</Table.Row>
+			);
 		});
 
 	render() {
@@ -133,68 +127,69 @@ class List extends Component {
 
 		return (
 			<Page.Content title={type.name}>
-				<Grid.Row>
-					<Grid.Col width={12}>
-						<Query query={buildCountQuery(type)}>
-							{({ loading, data }) => {
-								const countFieldName = getConnectionQueryName(type);
-								const total = data[countFieldName] ? data[countFieldName].aggregate.count : 0;
+				<Query query={buildCountQuery(type)}>
+					{({ loading, data }) => {
+						const countFieldName = getConnectionQueryName(type);
+						const total = data && data[countFieldName] ? data[countFieldName].aggregate.count : 0;
 
-								if (loading) return <Dimmer active loader />;
+						if (loading) return <Dimmer active loader />;
 
-								return (
-									<Card>
-										<Card.Header>
-											<Card.Options>
-												<Button
-													color="primary"
-													size="sm"
-													className="cardActionButton"
-													RootComponent={Link}
-													to={`/model/${params.type}/create`}
-												>
-													Add
-												</Button>
-											</Card.Options>
-										</Card.Header>
-										<Card.Body className="of-a">
-											<Query query={buildDataQuery(type)} variables={{ first, skip }}>
-												{({ loading, data }) => {
-													const dataFieldName = getDataQueryName(type);
-													const dataArray = data[dataFieldName];
+						return (
+							<Card>
+								<Card.Header>
+									<Card.Options>
+										<Button
+											color="primary"
+											size="sm"
+											className="cardActionButton"
+											RootComponent={Link}
+											to={`/model/${params.type}/create`}
+										>
+											Add
+										</Button>
+									</Card.Options>
+								</Card.Header>
+								<Card.Body className="of-a">
+									<Query query={buildDataQuery(type)} variables={{ first, skip }}>
+										{({ loading, data, error }) => {
+											if (loading) return <Dimmer active loader />;
 
-													if (loading) return <Dimmer active loader />;
+											const dataFieldName = getDataQueryName(type);
+											const dataArray = data ? data[dataFieldName] : [];
 
-													return (
-														<Table
-															responsive
-															cards
-															className="table-vcenter"
-															headerItems={[
-																...fields.map(field => ({
-																	content: snakeCase(field.name),
-																})),
-																{ content: null, className: 'w-1' },
-															]}
-															bodyItems={this.buildTableContent(fields, dataArray)}
-														/>
-													);
-												}}
-											</Query>
-										</Card.Body>
-										<ListFooter
-											total={total}
-											page={page}
-											handleNextPage={this.handleNextPage}
-											handlePrevPage={this.handlePrevPage}
-											handleLoadPage={this.handleLoadPage}
-										/>
-									</Card>
-								);
-							}}
-						</Query>
-					</Grid.Col>
-				</Grid.Row>
+											return (
+												<React.Fragment>
+													{(error || !data) && <Alert type="danger">Data loading failed</Alert>}
+													<Table responsive cards className="table-vcenter">
+														<Table.Header>
+															<Table.Row>
+																{fields.map(field => (
+																	<Table.ColHeader key={field.name}>
+																		{snakeCase(field.name)}
+																	</Table.ColHeader>
+																))}
+																<Table.ColHeader className="w-1">Action</Table.ColHeader>
+															</Table.Row>
+														</Table.Header>
+														<Table.Body>{this.buildTableContent(fields, dataArray)}</Table.Body>
+													</Table>
+													{dataArray.length === 0 && <p className="text-center my-2">No data</p>}
+												</React.Fragment>
+											);
+										}}
+									</Query>
+								</Card.Body>
+								<ListFooter
+									total={total}
+									page={page}
+									handleNextPage={this.handleNextPage}
+									handlePrevPage={this.handlePrevPage}
+									handleLoadPage={this.handleLoadPage}
+								/>
+							</Card>
+						);
+					}}
+				</Query>
 			</Page.Content>
 		);
 	}
