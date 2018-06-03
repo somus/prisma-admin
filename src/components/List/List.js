@@ -157,7 +157,7 @@ class List extends Component {
 												</Button>
 											</Card.Options>
 										</Card.Header>
-										<Card.Body>
+										<Card.Body className="of-a">
 											<Query query={buildDataQuery(type)} variables={{ first, skip }}>
 												{({ loading, data }) => {
 													const dataFieldName = getDataQueryName(type);

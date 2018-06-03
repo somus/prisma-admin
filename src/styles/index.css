@@ -7,3 +7,7 @@ body {
 .cardActionButton {
 	color: white !important;
 }
+
+.of-a {
+	overflow-x: auto;
+}
