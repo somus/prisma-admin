@@ -12,6 +12,8 @@ import {
 	LIMIT,
 	camelCase,
 	snakeCase,
+	getDataQueryName,
+	getConnectionQueryName,
 	getInputTypeFields,
 	getFieldKind,
 	buildDataQuery,
@@ -135,7 +137,7 @@ class List extends Component {
 					<Grid.Col width={12}>
 						<Query query={buildCountQuery(type)}>
 							{({ loading, data }) => {
-								const countFieldName = `${camelCase(type.name)}sConnection`;
+								const countFieldName = getConnectionQueryName(type);
 								const total = data[countFieldName] ? data[countFieldName].aggregate.count : 0;
 
 								if (loading) return <Dimmer active loader />;
@@ -158,7 +160,7 @@ class List extends Component {
 										<Card.Body>
 											<Query query={buildDataQuery(type)} variables={{ first, skip }}>
 												{({ loading, data }) => {
-													const dataFieldName = `${camelCase(type.name)}s`;
+													const dataFieldName = getDataQueryName(type);
 													const dataArray = data[dataFieldName];
 
 													if (loading) return <Dimmer active loader />;
@@ -171,7 +173,6 @@ class List extends Component {
 															headerItems={[
 																...fields.map(field => ({
 																	content: snakeCase(field.name),
-																	className: 'w-1'
 																})),
 																{ content: null, className: 'w-1' },
 															]}

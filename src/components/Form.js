@@ -11,7 +11,7 @@ import {
 	getFieldKind,
 	isFieldRequired,
 	capitalize,
-	camelCase,
+	getDataQueryName,
 	snakeCase,
 	buildDataQuery,
 	buildCreateMutation,
@@ -192,7 +192,7 @@ class DataForm extends Component {
 							const dataQuery = buildDataQuery(type);
 							const queryVariables = { first: LIMIT, skip: 0 };
 							let queryData = cache.readQuery({ query: dataQuery, variables: queryVariables });
-							const dataFieldName = `${camelCase(type.name)}s`;
+							const dataFieldName = getDataQueryName(type);
 							const createdFieldName = `create${type.name}`;
 							queryData[dataFieldName] = queryData[dataFieldName].concat([data[createdFieldName]]);
 							cache.writeQuery({

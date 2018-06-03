@@ -1,4 +1,5 @@
 import gql from 'graphql-tag';
+import pluralize, { isPlural } from 'pluralize';
 
 export const LIMIT = 10;
 
@@ -23,6 +24,16 @@ export const camelCase = string =>
 		.replace(/\s+/g, '');
 
 export const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
+
+export const getDataQueryName = type =>
+	// Check is necessary since prisma pluralizes existing plural words
+	isPlural(type.name) ? `${camelCase(type.name)}es` : pluralize(camelCase(type.name));
+
+export const getConnectionQueryName = type =>
+	// Check is necessary since prisma pluralizes existing plural words
+	isPlural(type.name)
+		? `${camelCase(type.name)}esConnection`
+		: `${pluralize(camelCase(type.name))}Connection`;
 
 export const getSchemaMainTypes = schema =>
 	schema.types
@@ -50,7 +61,7 @@ export const getFieldKind = field =>
 export const isFieldRequired = field => field.type.kind === 'NON_NULL';
 
 export const buildDataQuery = type => {
-	const queryName = `${camelCase(type.name)}s`;
+	const queryName = getDataQueryName(type);
 	const fields = getInputTypeFields(type);
 
 	return gql`
@@ -88,7 +99,7 @@ export const buildSingleDataQuery = type => {
 };
 
 export const buildCountQuery = type => {
-	const countQueryName = `${camelCase(type.name)}sConnection`;
+	const countQueryName = getConnectionQueryName(type);
 	return gql`
 			query countQuery {
 				${countQueryName} {
