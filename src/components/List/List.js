@@ -70,7 +70,7 @@ class List extends Component {
 					},
 				},
 			],
-		});
+		}).catch(e => alert(`Error deleting data:\n${e}`));
 	};
 
 	buildRowContent = (field, value) => {
