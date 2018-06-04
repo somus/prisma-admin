@@ -4,10 +4,12 @@ import { withRouter } from 'react-router-dom';
 import { Mutation } from 'react-apollo';
 
 import { Page, Form, Grid, Card, Button, Alert } from 'tabler-react';
+import TagsInput from 'react-tagsinput';
+
+import 'react-tagsinput/react-tagsinput.css';
 
 import {
 	LIMIT,
-	getInputTypeFields,
 	getFieldKind,
 	isFieldRequired,
 	capitalize,
@@ -16,6 +18,7 @@ import {
 	buildDataQuery,
 	buildCreateMutation,
 	buildUpdateMutation,
+	getListFieldKind,
 } from '../utils';
 
 class DataForm extends Component {
@@ -23,16 +26,28 @@ class DataForm extends Component {
 		super(props);
 		const { type, editData } = props;
 
-		const fields = getInputTypeFields(type).reduce(function(r, field) {
+		const getEditValue = (fieldName, isRelationField) => {
+			if (!editData) return null;
+			const fieldValue = editData[fieldName];
+
+			if (Array.isArray(fieldValue)) {
+				return fieldValue.map(val => (isRelationField ? val.id : val));
+			} else {
+				return isRelationField ? fieldValue.id : fieldValue;
+			}
+		};
+
+		const fields = type.fields.reduce(function(r, field) {
 			if (!['id', 'createdAt', 'updatedAt'].includes(field.name)) {
-				const isRelationField = field.args.length === 1;
+				const isRelationField = field.args.length > 0;
 				r.push({
 					name: field.name,
 					type: getFieldKind(field),
+					listType: getListFieldKind(field),
 					isRequired: isFieldRequired(field),
 					isRelationField,
 					value:
-						(editData && (isRelationField ? editData[field.name].id : editData[field.name])) || '',
+						getEditValue(field.name, isRelationField) || (getFieldKind(field) === 'LIST' ? [] : ''),
 					error: null,
 				});
 			}
@@ -100,8 +115,34 @@ class DataForm extends Component {
 		this.setState({ formData: validatedFormData });
 
 		if (isFormValid) {
-			const variables = validatedFormData.reduce((r, field) => {
-				r[field.name] = ['Int', 'Float'].includes(field.type) ? Number(field.value) : field.value;
+			const variables = {};
+			variables.data = validatedFormData.reduce((r, field) => {
+				if (field.isRelationField) {
+					r[field.name] = {
+						connect:
+							field.type === 'LIST'
+								? field.value.map(id => ({ id }))
+								: {
+										id: field.value,
+								  },
+					};
+				} else {
+					switch (field.type) {
+						case 'Int':
+						case 'Float':
+							r[field.name] = Number(field.value);
+							break;
+						case 'LIST':
+							r[field.name] = {
+								set: field.value.map(
+									v => (['Int', 'Float'].includes(field.listType) ? Number(v) : v),
+								),
+							};
+							break;
+						default:
+							r[field.name] = field.value;
+					}
+				}
 				return r;
 			}, Object.create(null));
 
@@ -170,6 +211,14 @@ class DataForm extends Component {
 						onChange={e => this.onFieldChange(field.name, e.target.checked)}
 					/>
 				);
+			case 'LIST':
+				return (
+					<TagsInput
+						value={field.value}
+						className="form-control tags-input"
+						onChange={tags => this.onFieldChange(field.name, tags)}
+					/>
+				);
 			default:
 				return (
 					<Form.Input
@@ -193,9 +242,7 @@ class DataForm extends Component {
 		return (
 			<Page.Content title={isEdit ? 'Edit' : 'Create'}>
 				<Mutation
-					mutation={
-						isEdit ? buildUpdateMutation(type, formData) : buildCreateMutation(type, formData)
-					}
+					mutation={isEdit ? buildUpdateMutation(type) : buildCreateMutation(type)}
 					update={(cache, { data }) => {
 						if (!isEdit) {
 							const dataQuery = buildDataQuery(type);

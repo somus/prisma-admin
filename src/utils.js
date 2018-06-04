@@ -53,22 +53,30 @@ export const getSchemaMainTypes = schema =>
 			return r;
 		}, Object.create(null));
 
-export const getInputTypeFields = type => type.fields.filter(field => field.args.length <= 1);
+export const getFieldKind = field => {
+	switch (field.type.kind) {
+		case 'NON_NULL':
+			return field.type.ofType.name;
+		case 'LIST':
+			return 'LIST';
+		default:
+			return field.type.name;
+	}
+};
 
-export const getFieldKind = field =>
-	field.type.kind !== 'NON_NULL' ? field.type.name : field.type.ofType.name;
+export const getListFieldKind = field =>
+	field.type.kind === 'LIST' ? field.type.ofType.ofType.name : null;
 
 export const isFieldRequired = field => field.type.kind === 'NON_NULL';
 
 export const buildDataQuery = type => {
 	const queryName = getDataQueryName(type);
-	const fields = getInputTypeFields(type);
 
 	return gql`
             query dataQuery($first: Int, $skip: Int) {
                 ${queryName}(first: $first, skip: $skip) {
-                    ${fields.reduce((r, field) => {
-											if (field.args.length === 1) {
+                    ${type.fields.reduce((r, field) => {
+											if (field.args.length > 0) {
 												return `${r}${field.name} { id }\n`;
 											}
 
@@ -81,13 +89,12 @@ export const buildDataQuery = type => {
 
 export const buildSingleDataQuery = type => {
 	const queryName = camelCase(type.name);
-	const fields = getInputTypeFields(type);
 
 	return gql`
             query singleDataQuery($id: ID) {
                 ${queryName}(where: { id: $id }) {
-                    ${fields.reduce((r, field) => {
-											if (field.args.length === 1) {
+                    ${type.fields.reduce((r, field) => {
+											if (field.args.length > 0) {
 												return `${r}${field.name} { id }\n`;
 											}
 
@@ -113,14 +120,13 @@ export const buildCountQuery = type => {
 
 export const buildDeleteMutation = type => {
 	const mutationName = `delete${type.name}`;
-	const fields = getInputTypeFields(type);
 
 	return gql`
             mutation deleteMutation($id: ID) {
                 ${mutationName}(where: {
                     id: $id
                 }) {
-                    ${fields
+                    ${type.fields
 											.filter(field => field.args.length === 0)
 											.reduce((r, field) => `${r}${field.name}\n`, '')}
                 }
@@ -128,10 +134,9 @@ export const buildDeleteMutation = type => {
         `;
 };
 
-export const buildCreateMutation = (type, formInputs) => {
-	const fields = getInputTypeFields(type);
-	const outputFields = `${fields.reduce((r, field) => {
-		if (field.args.length === 1) {
+export const buildCreateMutation = type => {
+	const outputFields = `${type.fields.reduce((r, field) => {
+		if (field.args.length > 0) {
 			return `${r}${field.name} { id }\n`;
 		}
 
@@ -139,34 +144,19 @@ export const buildCreateMutation = (type, formInputs) => {
 	}, '')}`;
 
 	const createMutationName = `create${type.name}`;
-	const mutationInputs = `${formInputs.reduce(
-		(r, field) =>
-			`${r}$${field.name}: ${field.isRelationField ? 'ID' : field.type}${
-				field.isRequired ? '!' : ''
-			}, `,
-		'',
-	)}`;
-	const prismaMutationInputs = `${formInputs.reduce((r, field) => {
-		if (field.isRelationField) {
-			return `${r}${field.name}: { connect: { id: $${field.name} } }, `;
-		}
-
-		return `${r}${field.name}: $${field.name}, `;
-	}, '')}`;
 
 	return gql`
-			mutation createMutation(${mutationInputs}) {
-				${createMutationName}(data: { ${prismaMutationInputs} }) {
+			mutation createMutation($data: ${capitalize(type.name)}CreateInput!) {
+				${createMutationName}(data: $data) {
 					 ${outputFields}
 				}
 			}
         `;
 };
 
-export const buildUpdateMutation = (type, formInputs) => {
-	const fields = getInputTypeFields(type);
-	const outputFields = `${fields.reduce((r, field) => {
-		if (field.args.length === 1) {
+export const buildUpdateMutation = type => {
+	const outputFields = `${type.fields.reduce((r, field) => {
+		if (field.args.length > 0) {
 			return `${r}${field.name} { id }\n`;
 		}
 
@@ -174,24 +164,10 @@ export const buildUpdateMutation = (type, formInputs) => {
 	}, '')}`;
 
 	const updateMutationName = `update${type.name}`;
-	const mutationInputs = `${formInputs.reduce(
-		(r, field) =>
-			`${r}$${field.name}: ${field.isRelationField ? 'ID' : field.type}${
-				field.isRequired ? '!' : ''
-			}, `,
-		'$id: ID!, ',
-	)}`;
-	const prismaMutationInputs = `${formInputs.reduce((r, field) => {
-		if (field.isRelationField) {
-			return `${r}${field.name}: { connect: { id: $${field.name} } }, `;
-		}
-
-		return `${r}${field.name}: $${field.name}, `;
-	}, '')}`;
 
 	return gql`
-			mutation updateMutation(${mutationInputs}) {
-				${updateMutationName}(data: { ${prismaMutationInputs} }, where: { id: $id }) {
+			mutation updateMutation($id: ID!, $data: ${capitalize(type.name)}UpdateInput!) {
+				${updateMutationName}(data: $data, where: { id: $id }) {
 					 ${outputFields}
 				}
 			}

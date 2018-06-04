@@ -1,4 +1,5 @@
 # Prisma Admin
+![Prisma admin screenshot](screenshot.png)
 
 A clean admin panel UI to manage prisma's graphql API
 
@@ -19,5 +20,5 @@ yarn start
 ```
 
 ### TODO
-- [ ] Support for list fields
+- [x] Support for list fields
 - [ ] Add tests

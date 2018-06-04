@@ -14,7 +14,6 @@ import {
 	snakeCase,
 	getDataQueryName,
 	getConnectionQueryName,
-	getInputTypeFields,
 	getFieldKind,
 	buildDataQuery,
 	buildCountQuery,
@@ -87,6 +86,8 @@ class List extends Component {
 				return value && <Icon prefix="fe" name="check" />;
 			case 'String':
 				return value;
+			case 'LIST':
+				return value.map(v => v.id || v).join(', ');
 			case 'DateTime':
 				return (
 					<Text RootComponent="span" muted>
@@ -121,7 +122,6 @@ class List extends Component {
 			match: { params },
 		} = this.props;
 		const { page } = this.state;
-		const fields = getInputTypeFields(type);
 		const skip = page === 1 ? 0 : (page - 1) * LIMIT;
 		const first = LIMIT;
 
@@ -163,7 +163,7 @@ class List extends Component {
 													<Table responsive cards className="table-vcenter">
 														<Table.Header>
 															<Table.Row>
-																{fields.map(field => (
+																{type.fields.map(field => (
 																	<Table.ColHeader key={field.name}>
 																		{snakeCase(field.name)}
 																	</Table.ColHeader>
@@ -171,7 +171,7 @@ class List extends Component {
 																<Table.ColHeader className="w-1">Action</Table.ColHeader>
 															</Table.Row>
 														</Table.Header>
-														<Table.Body>{this.buildTableContent(fields, dataArray)}</Table.Body>
+														<Table.Body>{this.buildTableContent(type.fields, dataArray)}</Table.Body>
 													</Table>
 													{dataArray.length === 0 && <p className="text-center my-2">No data</p>}
 												</React.Fragment>

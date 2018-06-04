@@ -11,3 +11,24 @@ body {
 .of-a {
 	overflow-x: auto;
 }
+
+.tags-input {
+	padding: 0.125rem 0.75rem !important;
+}
+
+.react-tagsinput--focused {
+	border-color: #1991eb !important;
+}
+
+.react-tagsinput-tag {
+	background-color: #45aaf2 !important;
+	color: #fff !important;
+	border: none !important;
+}
+
+.tags-input .react-tagsinput-tag,
+.tags-input .react-tagsinput-input {
+	padding: 0 5px !important;
+	margin-top: 5px !important;
+	margin-bottom: 5px !important;
+}
