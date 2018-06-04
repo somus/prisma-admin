@@ -16,7 +16,6 @@ import {
 	getConnectionQueryName,
 	getFieldKind,
 	buildDataQuery,
-	buildCountQuery,
 	buildDeleteMutation,
 } from '../../utils';
 
@@ -127,12 +126,12 @@ class List extends Component {
 
 		return (
 			<Page.Content title={type.name}>
-				<Query query={buildCountQuery(type)}>
-					{({ loading, data }) => {
+				<Query query={buildDataQuery(type)} variables={{ skip, first }}>
+					{({ loading, data, error }) => {
 						const countFieldName = getConnectionQueryName(type);
+						const dataFieldName = getDataQueryName(type);
 						const total = data && data[countFieldName] ? data[countFieldName].aggregate.count : 0;
-
-						if (loading) return <Dimmer active loader />;
+						const dataArray = data && data[dataFieldName] ? data[dataFieldName] : [];
 
 						return (
 							<Card>
@@ -150,34 +149,23 @@ class List extends Component {
 									</Card.Options>
 								</Card.Header>
 								<Card.Body className="of-a">
-									<Query query={buildDataQuery(type)} variables={{ first, skip }}>
-										{({ loading, data, error }) => {
-											if (loading) return <Dimmer active loader />;
-
-											const dataFieldName = getDataQueryName(type);
-											const dataArray = data && data[dataFieldName] ? data[dataFieldName] : [];
-
-											return (
-												<React.Fragment>
-													{(error || !data) && <Alert type="danger">Data loading failed</Alert>}
-													<Table responsive cards className="table-vcenter">
-														<Table.Header>
-															<Table.Row>
-																{type.fields.map(field => (
-																	<Table.ColHeader key={field.name}>
-																		{snakeCase(field.name)}
-																	</Table.ColHeader>
-																))}
-																<Table.ColHeader className="w-1">Action</Table.ColHeader>
-															</Table.Row>
-														</Table.Header>
-														<Table.Body>{this.buildTableContent(type.fields, dataArray)}</Table.Body>
-													</Table>
-													{dataArray.length === 0 && <p className="text-center my-2">No data</p>}
-												</React.Fragment>
-											);
-										}}
-									</Query>
+									{(error || !data) && <Alert type="danger">Data loading failed</Alert>}
+									<Dimmer active={loading} loader>
+										<Table responsive cards className="table-vcenter">
+											<Table.Header>
+												<Table.Row>
+													{type.fields.map(field => (
+														<Table.ColHeader key={field.name}>
+															{snakeCase(field.name)}
+														</Table.ColHeader>
+													))}
+													<Table.ColHeader className="w-1">Action</Table.ColHeader>
+												</Table.Row>
+											</Table.Header>
+											<Table.Body>{this.buildTableContent(type.fields, dataArray)}</Table.Body>
+										</Table>
+										{dataArray.length === 0 && <p className="text-center my-2">No data</p>}
+									</Dimmer>
 								</Card.Body>
 								<ListFooter
 									total={total}

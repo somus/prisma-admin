@@ -71,9 +71,15 @@ export const isFieldRequired = field => field.type.kind === 'NON_NULL';
 
 export const buildDataQuery = type => {
 	const queryName = getDataQueryName(type);
+	const countQueryName = getConnectionQueryName(type);
 
 	return gql`
             query dataQuery($first: Int, $skip: Int) {
+				${countQueryName} {
+					aggregate {
+						count
+					}
+				}
                 ${queryName}(first: $first, skip: $skip) {
                     ${type.fields.reduce((r, field) => {
 											if (field.args.length > 0) {
@@ -103,19 +109,6 @@ export const buildSingleDataQuery = type => {
                 }
             }
 		`;
-};
-
-export const buildCountQuery = type => {
-	const countQueryName = getConnectionQueryName(type);
-	return gql`
-			query countQuery {
-				${countQueryName} {
-					aggregate {
-						count
-					}
-				}
-			}
-        `;
 };
 
 export const buildDeleteMutation = type => {
