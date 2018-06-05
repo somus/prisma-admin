@@ -32,3 +32,24 @@ body {
 	margin-top: 5px !important;
 	margin-bottom: 5px !important;
 }
+
+.react-tagsinput-input input {
+	border: none;
+}
+
+.react-tagsinput-input input:focus {
+	outline: none;
+}
+
+.react-tagsinput-input input::-webkit-input-placeholder {
+	color: #adb5bd;
+}
+.react-tagsinput-input input::-moz-placeholder {
+	color: #adb5bd;
+}
+.react-tagsinput-input input:-ms-input-placeholder {
+	color: #adb5bd;
+}
+.react-tagsinput-input input:-moz-placeholder {
+	color: #adb5bd;
+}

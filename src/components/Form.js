@@ -5,6 +5,7 @@ import { Mutation } from 'react-apollo';
 
 import { Page, Form, Grid, Card, Button, Alert } from 'tabler-react';
 import TagsInput from 'react-tagsinput';
+import AutosizeInput from 'react-input-autosize';
 
 import 'react-tagsinput/react-tagsinput.css';
 
@@ -216,6 +217,13 @@ class DataForm extends Component {
 					<TagsInput
 						value={field.value}
 						className="form-control tags-input"
+						inputProps={{ placeholder: `Enter ${field.listType} ID and press enter` }}
+						renderInput={({ addTag, ...props }) => {
+							let { onChange, value, ...other } = props
+							return (
+								<AutosizeInput type='text' onChange={onChange} value={value} {...other} />
+							)
+						}}
 						onChange={tags => this.onFieldChange(field.name, tags)}
 					/>
 				);
