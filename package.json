@@ -6,7 +6,6 @@
 	},
 	"bin": "./index.js",
 	"license": "MIT",
-	"homepage": "https://github.com/somus/prisma-admin#readme",
 	"bugs": {
 		"url": "https://github.com/somus/prisma-admin/issues"
 	},
