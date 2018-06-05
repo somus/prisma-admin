@@ -22,8 +22,7 @@ function SiteWrapper({ navBarItems, children }) {
 		<Site.Wrapper
 			headerProps={{
 				href: '/',
-				alt: 'Prisma Admin',
-				imageURL: '/logo.svg',
+				children: 'Prisma Admin',
 				navItems: (
 					<Nav.Item type="div" className="d-none d-md-flex">
 						<Button
