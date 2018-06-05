@@ -1,6 +1,7 @@
 # Prisma Admin
-![Prisma admin screenshot](screenshot.png)
 A clean admin panel UI to manage prisma's graphql API data.
+
+![Prisma admin screenshot](https://raw.githubusercontent.com/somus/prisma-admin/master/screenshot.png)
 
 ### Motivation
 I recently started learning graphql and was playing around with it. So, I eventually came across [prisma](https://prisma.io) and started using it. While the graphiql editor which comes with it is great for testing the queries and mutations. It is not intuitive for creating or managing data. So, I started playing around with the introspection query and made prisma-admin.
