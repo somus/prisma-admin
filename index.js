@@ -4,7 +4,9 @@ const minimist = require('minimist');
 const chalk = require('chalk');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
-const { version } = require('./package.json');
+const path = require('path');
+
+const { version } = path.resolve(__dirname, './package.json');
 
 const usage = `  Usage: prisma-admin PRSIMA_ENDPOINT
   ${chalk.bold('Starts a admin server for the given prisma endpoint')}
