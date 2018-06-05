@@ -4,9 +4,7 @@ const minimist = require('minimist');
 const chalk = require('chalk');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
-const path = require('path');
-
-const { version } = path.resolve(__dirname, './package.json');
+const { version } = require('./package.json');
 
 const usage = `  Usage: prisma-admin PRSIMA_ENDPOINT
   ${chalk.bold('Starts a admin server for the given prisma endpoint')}
@@ -40,10 +38,10 @@ async function main() {
 	}
 
 	console.log('Building app...');
-	await exec(`${env} yarn build`);
+	await exec(`${env} yarn build`, { cwd: __dirname });
 
 	console.log(chalk.green('App running at port 5000'));
-	exec('yarn serve');
+	exec('yarn serve', { cwd: __dirname });
 }
 
 main().catch(e => console.log(e));
