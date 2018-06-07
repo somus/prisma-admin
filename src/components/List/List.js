@@ -17,6 +17,7 @@ import {
 	getFieldKind,
 	buildDataQuery,
 	buildDeleteMutation,
+	getPrimaryRelationField,
 } from '../../utils';
 
 class List extends Component {
@@ -32,6 +33,7 @@ class List extends Component {
 		client: PropTypes.shape({
 			mutate: PropTypes.func.isRequired,
 		}).isRequired,
+		inputTypes: PropTypes.object.isRequired,
 	};
 
 	async componentDidUpdate(prevProps) {
@@ -73,7 +75,9 @@ class List extends Component {
 		}).catch(e => alert(`Error deleting data:\n${e}`));
 	};
 
-	buildRowContent = (field, value) => {
+	buildRowContent = (field, inputTypes, value) => {
+		const primaryRelationField =
+			field.args.length > 0 ? getPrimaryRelationField(field, inputTypes) : null;
 		switch (getFieldKind(field)) {
 			case 'ID':
 				return (
@@ -86,7 +90,7 @@ class List extends Component {
 			case 'String':
 				return value;
 			case 'LIST':
-				return value.map(v => v.id || v).join(', ');
+				return value.map(v => v[primaryRelationField.name] || v).join(', ');
 			case 'DateTime':
 				return (
 					<Text RootComponent="span" muted>
@@ -94,16 +98,18 @@ class List extends Component {
 					</Text>
 				);
 			default:
-				return isPlainObject(value) ? value.id : value;
+				return isPlainObject(value) ? value[primaryRelationField.name] : value;
 		}
 	};
 
-	buildTableContent = (fields, data) =>
+	buildTableContent = (fields, inputTypes, data) =>
 		data.map((d, i) => {
 			return (
 				<Table.Row key={i}>
 					{fields.map(field => (
-						<Table.Col key={field.name}>{this.buildRowContent(field, d[field.name])}</Table.Col>
+						<Table.Col key={field.name}>
+							{this.buildRowContent(field, inputTypes, d[field.name])}
+						</Table.Col>
 					))}
 					<Table.Col alignContent="right">
 						<Link to={`/model/${camelCase(this.props.type.name)}/edit/${d.id}`}>
@@ -119,6 +125,7 @@ class List extends Component {
 		const {
 			type,
 			match: { params },
+			inputTypes,
 		} = this.props;
 		const { page } = this.state;
 		const skip = page === 1 ? 0 : (page - 1) * LIMIT;
@@ -126,7 +133,7 @@ class List extends Component {
 
 		return (
 			<Page.Content title={type.name}>
-				<Query query={buildDataQuery(type)} variables={{ skip, first }}>
+				<Query query={buildDataQuery(type, inputTypes)} variables={{ skip, first }}>
 					{({ loading, data, error }) => {
 						const countFieldName = getConnectionQueryName(type);
 						const dataFieldName = getDataQueryName(type);
@@ -162,7 +169,9 @@ class List extends Component {
 													<Table.ColHeader className="w-1">Action</Table.ColHeader>
 												</Table.Row>
 											</Table.Header>
-											<Table.Body>{this.buildTableContent(type.fields, dataArray)}</Table.Body>
+											<Table.Body>
+												{this.buildTableContent(type.fields, inputTypes, dataArray)}
+											</Table.Body>
 										</Table>
 										{dataArray.length === 0 && <p className="text-center my-2">No data</p>}
 									</Dimmer>

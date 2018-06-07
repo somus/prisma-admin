@@ -10,10 +10,10 @@ import { Dimmer, Page, Alert } from 'tabler-react';
 import SiteWrapper from './SiteWrapper';
 import Home from './Home';
 import List from './List/List';
-import Form from './Form';
+import Form from './Form/Form';
 import EditForm from './EditForm';
 
-import { getSchemaMainTypes } from '../utils';
+import { getSchemaMainTypes, getSchemaInputTypes } from '../utils';
 
 function App() {
 	const INTROSPECTION_QUERY = gql`
@@ -34,6 +34,7 @@ function App() {
 				}
 
 				const mainTypes = getSchemaMainTypes(data.__schema);
+				const inputTypes = getSchemaInputTypes(data.__schema);
 				const navBarItems = Object.values(mainTypes).map(type => type.name);
 
 				return (
@@ -43,12 +44,24 @@ function App() {
 							<Route
 								exact
 								path="/model/:type"
-								render={props => <List {...props} type={mainTypes[props.match.params.type]} />}
+								render={props => (
+									<List
+										{...props}
+										type={mainTypes[props.match.params.type]}
+										inputTypes={inputTypes}
+									/>
+								)}
 							/>
 							<Route
 								exact
 								path="/model/:type/create"
-								render={props => <Form {...props} type={mainTypes[props.match.params.type]} />}
+								render={props => (
+									<Form
+										{...props}
+										type={mainTypes[props.match.params.type]}
+										inputTypes={inputTypes}
+									/>
+								)}
 							/>
 							<Route
 								exact
@@ -58,6 +71,7 @@ function App() {
 										{...props}
 										type={mainTypes[props.match.params.type]}
 										id={props.match.params.id}
+										inputTypes={inputTypes}
 									/>
 								)}
 							/>

@@ -3,21 +3,21 @@ import PropTypes from 'prop-types';
 import { Query } from 'react-apollo';
 
 import { Dimmer } from 'tabler-react';
-import Form from './Form';
+import Form from './Form/Form';
 
 import { camelCase, buildSingleDataQuery } from '../utils';
 
 const EditForm = props => {
-	const { type, id } = props;
+	const { type, id, inputTypes } = props;
 
 	return (
-		<Query query={buildSingleDataQuery(type)} variables={{ id: id }}>
+		<Query query={buildSingleDataQuery(type, inputTypes)} variables={{ id: id }}>
 			{({ loading, data }) => {
 				if (loading) return <Dimmer active loader />;
 
 				const editData = data[camelCase(type.name)];
 
-				return <Form {...props} editData={editData} />;
+				return <Form {...props} editData={editData} inputTypes={inputTypes} />;
 			}}
 		</Query>
 	);
@@ -26,6 +26,7 @@ const EditForm = props => {
 EditForm.propTypes = {
 	type: PropTypes.object.isRequired,
 	id: PropTypes.string.isRequired,
+	inputTypes: PropTypes.object.isRequired,
 };
 
 export default EditForm;

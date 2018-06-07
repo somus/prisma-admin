@@ -11,8 +11,13 @@ import { InMemoryCache } from 'apollo-cache-inmemory';
 
 const { REACT_APP_PRISMA_ENDPOINT, REACT_APP_PRISMA_TOKEN } = process.env;
 const httpLink = new HttpLink({
-	uri: REACT_APP_PRISMA_ENDPOINT || 'https://eu1.prisma.sh/lol/homepage-snippets/dev/',
-	headers: REACT_APP_PRISMA_TOKEN ? { Authorization: REACT_APP_PRISMA_TOKEN } : {},
+	uri: REACT_APP_PRISMA_ENDPOINT || 'https://us1.prisma.sh/somasundaram-ayyappan-9dd303/airbnb/dev',
+	headers: REACT_APP_PRISMA_TOKEN
+		? { Authorization: REACT_APP_PRISMA_TOKEN }
+		: {
+				Authorization:
+					'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1Mjg0MjQyNDksIm5iZiI6MTUyODMzNzg0OX0.VRCC7WpPQHgM6lT-KDoV5lUDVNsKi5TpeMyx0Vvyw30',
+		  },
 });
 
 const client = new ApolloClient({

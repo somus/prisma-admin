@@ -4,52 +4,62 @@ import { withRouter } from 'react-router-dom';
 import { Mutation } from 'react-apollo';
 
 import { Page, Form, Grid, Card, Button, Alert } from 'tabler-react';
-import TagsInput from 'react-tagsinput';
-import AutosizeInput from 'react-input-autosize';
-
-import 'react-tagsinput/react-tagsinput.css';
+import FormBody from './FormBody';
 
 import {
 	LIMIT,
 	getFieldKind,
 	isFieldRequired,
-	capitalize,
 	getDataQueryName,
 	snakeCase,
 	buildDataQuery,
 	buildCreateMutation,
 	buildUpdateMutation,
 	getListFieldKind,
-} from '../utils';
+	getPrimaryRelationField,
+	hasValueChanged,
+} from '../../utils';
 
 class DataForm extends Component {
 	constructor(props) {
 		super(props);
-		const { type, editData } = props;
+		const { type, editData, inputTypes } = props;
 
-		const getEditValue = (fieldName, isRelationField) => {
+		const getEditValue = (fieldName, isRelationField, primaryRelationField) => {
 			if (!editData) return null;
 			const fieldValue = editData[fieldName];
 
 			if (Array.isArray(fieldValue)) {
-				return fieldValue.map(val => (isRelationField ? val.id : val));
+				return fieldValue.map(
+					val => (isRelationField && val ? val[primaryRelationField.name] : val),
+				);
 			} else {
-				return isRelationField ? fieldValue.id : fieldValue;
+				return isRelationField && fieldValue ? fieldValue[primaryRelationField.name] : fieldValue;
 			}
 		};
 
 		const fields = type.fields.reduce(function(r, field) {
 			if (!['id', 'createdAt', 'updatedAt'].includes(field.name)) {
 				const isRelationField = field.args.length > 0;
+				const primaryRelationField = isRelationField
+					? getPrimaryRelationField(field, inputTypes)
+					: null;
+
 				r.push({
 					name: field.name,
 					type: getFieldKind(field),
 					listType: getListFieldKind(field),
 					isRequired: isFieldRequired(field),
 					isRelationField,
+					primaryRelationField: primaryRelationField && {
+						name: primaryRelationField.name,
+						type: getFieldKind(primaryRelationField),
+					},
 					value:
-						getEditValue(field.name, isRelationField) || (getFieldKind(field) === 'LIST' ? [] : ''),
+						getEditValue(field.name, isRelationField, primaryRelationField) ||
+						(getFieldKind(field) === 'LIST' ? [] : ''),
 					error: null,
+					isValueChanged: false,
 				});
 			}
 			return r;
@@ -68,10 +78,11 @@ class DataForm extends Component {
 		history: PropTypes.shape({
 			replace: PropTypes.func.isRequired,
 		}).isRequired,
+		inputTypes: PropTypes.object.isRequired,
 	};
 
 	validateValues = field => {
-		if (field.isRequired && (!field.value || field.value === '')) {
+		if (field.isRequired && field.type !== 'Boolean' && (!field.value || field.value === '')) {
 			return 'Field is required';
 		}
 		if (field.type === 'Int' && !Number.isInteger(Number(field.value))) {
@@ -85,11 +96,12 @@ class DataForm extends Component {
 	};
 
 	onFieldChange = (name, value) => {
-		const { formData } = this.state;
+		const { formData, isEdit } = this.state;
 
 		const updatedFormData = formData.map(field => {
 			if (field.name === name) {
 				field.value = value;
+				field.isValueChanged = isEdit && hasValueChanged(field, value, this.props.editData[name]);
 				field.error = this.validateValues(field);
 			}
 
@@ -117,7 +129,19 @@ class DataForm extends Component {
 
 		if (isFormValid) {
 			const variables = {};
-			variables.data = validatedFormData.reduce((r, field) => {
+			const filteredFormData = isEdit
+				? validatedFormData.filter(
+						field =>
+							// Include only changed values when editing
+							(isEdit ? field.isValueChanged : true) &&
+							(!field.isRelationField ||
+								// Filter out relation fields without an id while editing
+								// Filter optional relational fields without any value
+								(field.primaryRelationField.name === 'id' && field.value !== '')),
+				  )
+				: validatedFormData;
+
+			variables.data = filteredFormData.reduce((r, field) => {
 				if (field.isRelationField) {
 					r[field.name] = {
 						connect:
@@ -159,90 +183,8 @@ class DataForm extends Component {
 		}
 	};
 
-	buildField = field => {
-		switch (field.type) {
-			case 'String':
-			case 'Int':
-			case 'Float':
-				return (
-					<Form.Input
-						name={field.name}
-						placeholder={`Enter ${field.name}`}
-						value={field.value}
-						invalid={!!field.error}
-						feedback={field.error}
-						onChange={e => this.onFieldChange(field.name, e.target.value)}
-					/>
-				);
-			case 'DateTime':
-				return (
-					<Form.DatePicker
-						name={field.name}
-						value={new Date(field.value)}
-						invalid={!!field.error}
-						feedback={field.error}
-						format="mm/dd/yyyy"
-						maxYear={2018}
-						minYear={1900}
-						monthLabels={[
-							'January',
-							'February',
-							'March',
-							'April',
-							'May',
-							'June',
-							'July',
-							'August',
-							'September',
-							'October',
-							'November',
-							'December',
-						]}
-						onChange={e => this.onFieldChange(field.name, e.target.value)}
-					/>
-				);
-			case 'Boolean':
-				return (
-					<Form.Switch
-						name={field.name}
-						value={field.value}
-						invalid={!!field.error}
-						feedback={field.error}
-						checked={field.value}
-						onChange={e => this.onFieldChange(field.name, e.target.checked)}
-					/>
-				);
-			case 'LIST':
-				return (
-					<TagsInput
-						value={field.value}
-						className="form-control tags-input"
-						inputProps={{ placeholder: `Enter ${field.listType} ID and press enter` }}
-						renderInput={({ addTag, ...props }) => {
-							let { onChange, value, ...other } = props
-							return (
-								<AutosizeInput type='text' onChange={onChange} value={value} {...other} />
-							)
-						}}
-						onChange={tags => this.onFieldChange(field.name, tags)}
-					/>
-				);
-			default:
-				return (
-					<Form.Input
-						name={field.name}
-						placeholder={`Enter ${field.type} ID`}
-						value={field.value}
-						invalid={!!field.error}
-						feedback={field.error}
-						onChange={e => this.onFieldChange(field.name, e.target.value)}
-					/>
-				);
-		}
-	};
-
 	render() {
-		const { type, id, editData } = this.props;
+		const { type, id, editData, inputTypes } = this.props;
 		const { formData, isEdit } = this.state;
 		const hasCreatedAt = type.fields.some(field => field.name === 'createdAt');
 		const hasUpdatedAt = type.fields.some(field => field.name === 'updatedAt');
@@ -250,7 +192,9 @@ class DataForm extends Component {
 		return (
 			<Page.Content title={isEdit ? 'Edit' : 'Create'}>
 				<Mutation
-					mutation={isEdit ? buildUpdateMutation(type) : buildCreateMutation(type)}
+					mutation={
+						isEdit ? buildUpdateMutation(type, inputTypes) : buildCreateMutation(type, inputTypes)
+					}
 					update={(cache, { data }) => {
 						if (!isEdit) {
 							const dataQuery = buildDataQuery(type);
@@ -297,13 +241,11 @@ class DataForm extends Component {
 													)}
 												</Fragment>
 											)}
-											{formData.map(field => (
-												<Grid.Col width={4} key={field.name}>
-													<Form.Group label={capitalize(field.name)}>
-														{this.buildField(field)}
-													</Form.Group>
-												</Grid.Col>
-											))}
+											<FormBody
+												formData={formData}
+												isEdit={isEdit}
+												onFieldChange={this.onFieldChange}
+											/>
 										</Grid.Row>
 									</Card.Body>
 									<Card.Footer className="text-right">

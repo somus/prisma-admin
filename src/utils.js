@@ -53,6 +53,12 @@ export const getSchemaMainTypes = schema =>
 			return r;
 		}, Object.create(null));
 
+export const getSchemaInputTypes = schema =>
+	schema.types.filter(type => type.kind === 'INPUT_OBJECT').reduce(function(r, type) {
+		r[type.name] = type;
+		return r;
+	}, Object.create(null));
+
 export const getFieldKind = field => {
 	switch (field.type.kind) {
 		case 'NON_NULL':
@@ -69,7 +75,20 @@ export const getListFieldKind = field =>
 
 export const isFieldRequired = field => field.type.kind === 'NON_NULL';
 
-export const buildDataQuery = type => {
+export const getWhereInputName = field =>
+	field.args.filter(arg => arg.name === 'where')[0].type.name;
+
+export const getPrimaryRelationField = (field, inputTypes) => {
+	const whereInputName = getWhereInputName(field);
+	const queryFields = inputTypes[whereInputName].inputFields.filter(
+		field => field.description === '',
+	);
+	const idField = queryFields.filter(field => field.name === 'id')[0];
+
+	return idField || queryFields[0];
+};
+
+export const buildDataQuery = (type, inputTypes) => {
 	const queryName = getDataQueryName(type);
 	const countQueryName = getConnectionQueryName(type);
 
@@ -83,7 +102,9 @@ export const buildDataQuery = type => {
                 ${queryName}(first: $first, skip: $skip) {
                     ${type.fields.reduce((r, field) => {
 											if (field.args.length > 0) {
-												return `${r}${field.name} { id }\n`;
+												const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+
+												return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 											}
 
 											return `${r}${field.name}\n`;
@@ -93,7 +114,7 @@ export const buildDataQuery = type => {
 		`;
 };
 
-export const buildSingleDataQuery = type => {
+export const buildSingleDataQuery = (type, inputTypes) => {
 	const queryName = camelCase(type.name);
 
 	return gql`
@@ -101,7 +122,9 @@ export const buildSingleDataQuery = type => {
                 ${queryName}(where: { id: $id }) {
                     ${type.fields.reduce((r, field) => {
 											if (field.args.length > 0) {
-												return `${r}${field.name} { id }\n`;
+												const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+
+												return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 											}
 
 											return `${r}${field.name}\n`;
@@ -127,10 +150,11 @@ export const buildDeleteMutation = type => {
         `;
 };
 
-export const buildCreateMutation = type => {
+export const buildCreateMutation = (type, inputTypes) => {
 	const outputFields = `${type.fields.reduce((r, field) => {
 		if (field.args.length > 0) {
-			return `${r}${field.name} { id }\n`;
+			const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+			return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 		}
 
 		return `${r}${field.name}\n`;
@@ -147,10 +171,11 @@ export const buildCreateMutation = type => {
         `;
 };
 
-export const buildUpdateMutation = type => {
+export const buildUpdateMutation = (type, inputTypes) => {
 	const outputFields = `${type.fields.reduce((r, field) => {
 		if (field.args.length > 0) {
-			return `${r}${field.name} { id }\n`;
+			const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+			return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 		}
 
 		return `${r}${field.name}\n`;
@@ -165,4 +190,22 @@ export const buildUpdateMutation = type => {
 				}
 			}
         `;
+};
+
+export const hasValueChanged = (field, newValue, oldValue) => {
+	if (field.type === 'LIST') {
+		const mappedOldValue = oldValue.map(v => v[field.primaryRelationField.name]);
+		const convertedNewValue = newValue.map(
+			v => (['Int', 'Float'].includes(field.listType) ? Number(v) : v),
+		);
+
+		return (
+			convertedNewValue.length !== mappedOldValue.length ||
+			!convertedNewValue.every(v => mappedOldValue.includes(v))
+		);
+	}
+
+	const convertedNewValue = ['Int', 'Float'].includes(field.type) ? Number(newValue) : newValue;
+
+	return oldValue !== convertedNewValue;
 };

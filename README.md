@@ -26,5 +26,5 @@ yarn start
 ```
 
 ### TODO
-- [ ] Add support for related field types without an ID field
+- [ ] Add support for adding and deleting data from list fields
 - [ ] Add tests
