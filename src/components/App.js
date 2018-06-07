@@ -6,7 +6,7 @@ import gql from 'graphql-tag';
 
 import 'tabler-react/dist/Tabler.css';
 
-import { Dimmer } from 'tabler-react';
+import { Dimmer, Page, Alert } from 'tabler-react';
 import SiteWrapper from './SiteWrapper';
 import Home from './Home';
 import List from './List/List';
@@ -22,18 +22,18 @@ function App() {
 
 	return (
 		<Query query={INTROSPECTION_QUERY}>
-			{({ loading, data: { __schema } }) => {
-				if (loading) {
+			{({ loading, error, data }) => {
+				if (loading || error) {
 					return (
-						<Dimmer loader active>
+						<Dimmer loader active={loading}>
 							<SiteWrapper>
-								<h1>Loading...</h1>
+								<Page.Content>{error && <Alert type="danger">{error.message}</Alert>}</Page.Content>
 							</SiteWrapper>
 						</Dimmer>
 					);
 				}
 
-				const mainTypes = getSchemaMainTypes(__schema);
+				const mainTypes = getSchemaMainTypes(data.__schema);
 				const navBarItems = Object.values(mainTypes).map(type => type.name);
 
 				return (
