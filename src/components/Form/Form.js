@@ -17,13 +17,14 @@ import {
 	buildUpdateMutation,
 	getListFieldKind,
 	getPrimaryRelationField,
+	getEnumFieldValues,
 	hasValueChanged,
 } from '../../utils';
 
 class DataForm extends Component {
 	constructor(props) {
 		super(props);
-		const { type, editData, inputTypes } = props;
+		const { type, editData, inputTypes, enumTypes } = props;
 
 		const getEditValue = (fieldName, isRelationField, primaryRelationField) => {
 			if (!editData) return null;
@@ -55,6 +56,7 @@ class DataForm extends Component {
 						name: primaryRelationField.name,
 						type: getFieldKind(primaryRelationField),
 					},
+					enumValues: getEnumFieldValues(field, enumTypes),
 					value:
 						getEditValue(field.name, isRelationField, primaryRelationField) ||
 						(getFieldKind(field) === 'LIST' ? [] : ''),
@@ -79,6 +81,7 @@ class DataForm extends Component {
 			replace: PropTypes.func.isRequired,
 		}).isRequired,
 		inputTypes: PropTypes.object.isRequired,
+		enumTypes: PropTypes.object.isRequired,
 	};
 
 	validateValues = field => {

@@ -59,12 +59,26 @@ export const getSchemaInputTypes = schema =>
 		return r;
 	}, Object.create(null));
 
+export const getSchemaEnumTypes = schema =>
+	schema.types
+		.filter(
+			type =>
+				type.kind === 'ENUM' &&
+				!['MutationType', '__DirectiveLocation', '__TypeKind'].includes(type.name) &&
+				!type.name.endsWith('Input'),
+		)
+		.reduce(function(r, type) {
+			r[type.name] = type;
+			return r;
+		}, Object.create(null));
+
 export const getFieldKind = field => {
 	switch (field.type.kind) {
 		case 'NON_NULL':
 			return field.type.ofType.name;
 		case 'LIST':
-			return 'LIST';
+		case 'ENUM':
+			return field.type.kind;
 		default:
 			return field.type.name;
 	}
@@ -72,6 +86,14 @@ export const getFieldKind = field => {
 
 export const getListFieldKind = field =>
 	field.type.kind === 'LIST' ? field.type.ofType.ofType.name : null;
+
+export const getEnumFieldValues = (field, schemaEnumFields) => {
+	if (getFieldKind(field) !== 'ENUM') return null;
+
+	const enumName = field.type.kind === 'NON_NULL' ? field.type.ofType.type.name : field.type.name;
+
+	return schemaEnumFields[enumName].enumValues.map(v => v.name);
+};
 
 export const isFieldRequired = field => field.type.kind === 'NON_NULL';
 

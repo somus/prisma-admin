@@ -83,6 +83,20 @@ const buildField = (field, isEdit, onFieldChange) => {
 					onChange={tags => onFieldChange(field.name, tags)}
 				/>
 			);
+		case 'ENUM':
+			return (
+				<Form.Select
+					name={field.name}
+					value={field.value}
+					onChange={e => onFieldChange(field.name, e.target.value)}
+				>
+					{field.enumValues.map(v => (
+						<option key={v} value={v}>
+							{v}
+						</option>
+					))}
+				</Form.Select>
+			);
 		default:
 			return (
 				<Form.Input

@@ -13,7 +13,7 @@ import List from './List/List';
 import Form from './Form/Form';
 import EditForm from './EditForm';
 
-import { getSchemaMainTypes, getSchemaInputTypes } from '../utils';
+import { getSchemaMainTypes, getSchemaInputTypes, getSchemaEnumTypes } from '../utils';
 
 function App() {
 	const INTROSPECTION_QUERY = gql`
@@ -35,6 +35,7 @@ function App() {
 
 				const mainTypes = getSchemaMainTypes(data.__schema);
 				const inputTypes = getSchemaInputTypes(data.__schema);
+				const enumTypes = getSchemaEnumTypes(data.__schema);
 				const navBarItems = Object.values(mainTypes).map(type => type.name);
 
 				return (
@@ -60,6 +61,7 @@ function App() {
 										{...props}
 										type={mainTypes[props.match.params.type]}
 										inputTypes={inputTypes}
+										enumTypes={enumTypes}
 									/>
 								)}
 							/>
@@ -72,6 +74,7 @@ function App() {
 										type={mainTypes[props.match.params.type]}
 										id={props.match.params.id}
 										inputTypes={inputTypes}
+										enumTypes={enumTypes}
 									/>
 								)}
 							/>
