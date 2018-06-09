@@ -112,10 +112,12 @@ class List extends Component {
 						</Table.Col>
 					))}
 					<Table.Col alignContent="right">
-						<Link to={`/model/${camelCase(this.props.type.name)}/edit/${d.id}`}>
-							<i style={{ color: '#495057' }} className="fe fe-edit" />
-						</Link>
-						<i className="fe fe-trash ml-2" onClick={() => this.deleteData(d.id)} />
+						{d.id && (
+							<Link to={`/model/${camelCase(this.props.type.name)}/edit/${d.id}`}>
+								<i style={{ color: '#495057' }} className="fe fe-edit" />
+							</Link>
+						)}
+						{d.id && <i className="fe fe-trash ml-2" onClick={() => this.deleteData(d.id)} />}
 					</Table.Col>
 				</Table.Row>
 			);
@@ -166,7 +168,7 @@ class List extends Component {
 															{snakeCase(field.name)}
 														</Table.ColHeader>
 													))}
-													<Table.ColHeader className="w-1">Action</Table.ColHeader>
+													<Table.ColHeader className="w-1">Actions</Table.ColHeader>
 												</Table.Row>
 											</Table.Header>
 											<Table.Body>
