@@ -9,10 +9,11 @@ import { ApolloClient } from 'apollo-client';
 import { HttpLink } from 'apollo-link-http';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 
-const { REACT_APP_PRISMA_ENDPOINT, REACT_APP_PRISMA_TOKEN } = process.env;
+const { PRISMA_ENDPOINT, PRISMA_TOKEN } = window.env || {};
+
 const httpLink = new HttpLink({
-	uri: REACT_APP_PRISMA_ENDPOINT || 'https://eu1.prisma.sh/lol/homepage-snippets/dev',
-	headers: REACT_APP_PRISMA_TOKEN ? { Authorization: REACT_APP_PRISMA_TOKEN } : {},
+	uri: PRISMA_ENDPOINT || 'https://eu1.prisma.sh/lol/homepage-snippets/dev',
+	headers: PRISMA_TOKEN ? { Authorization: PRISMA_TOKEN } : {},
 });
 
 const client = new ApolloClient({

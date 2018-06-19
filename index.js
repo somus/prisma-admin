@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const minimist = require('minimist');
 const chalk = require('chalk');
 const util = require('util');
@@ -14,7 +15,9 @@ const usage = `  Usage: prisma-admin PRSIMA_ENDPOINT
     --version, -v   Print version of prisma-admin
 
   Example:
-  ${chalk.yellow('prisma-admin https://eu1.prisma.sh/lol/homepage-snippets/dev')}
+  ${chalk.yellow(
+		'prisma-admin https://eu1.prisma.sh/lol/homepage-snippets/dev',
+  )}
 `;
 
 async function main() {
@@ -32,13 +35,12 @@ async function main() {
 
 	const endpoint = argv._[0];
 	const token = argv['token'] || argv['t'];
-	let env = `REACT_APP_PRISMA_ENDPOINT=${endpoint}`;
+	let envString = `window.env={ PRISMA_ENDPOINT: "${endpoint}" };`;
 	if (token) {
-		env = `${env} REACT_APP_PRISMA_TOKEN=${token}`;
+		envString = `${envString}window.env.PRISMA_TOKEN="${token}"`;
 	}
 
-	console.log('Building app...');
-	await exec(`${env} yarn build`, { cwd: __dirname });
+	fs.writeFileSync('./build/runtime-env.js', envString, 'utf8');
 
 	console.log(chalk.green('App running at port 5000'));
 	exec('yarn serve', { cwd: __dirname });

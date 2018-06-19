@@ -32,6 +32,7 @@
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
+		"postinstall": "npm run build",
 		"serve": "serve -l 5000 -s build",
 		"test": "react-scripts test --env=jsdom",
 		"eject": "react-scripts eject"
