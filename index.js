@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const minimist = require('minimist');
 const chalk = require('chalk');
 const util = require('util');
@@ -40,7 +41,7 @@ async function main() {
 		envString = `${envString}window.env.PRISMA_TOKEN="${token}"`;
 	}
 
-	fs.writeFileSync('./build/runtime-env.js', envString, 'utf8');
+	fs.writeFileSync(path.resolve(__dirname, './build/runtime-env.js'), envString, 'utf8');
 
 	console.log(chalk.green('App running at port 5000'));
 	exec('yarn serve', { cwd: __dirname });
