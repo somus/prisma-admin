@@ -1,5 +1,6 @@
 import gql from 'graphql-tag';
 import pluralize, { isPlural } from 'pluralize';
+import difference from 'lodash.difference';
 
 export const LIMIT = 10;
 
@@ -19,15 +20,19 @@ export const camelCase = string =>
 	string
 		.replace(
 			/(?:^\w|[A-Z]|\b\w)/g,
-			(letter, index) => (index === 0 ? letter.toLowerCase() : letter.toUpperCase()),
+			(letter, index) =>
+				index === 0 ? letter.toLowerCase() : letter.toUpperCase(),
 		)
 		.replace(/\s+/g, '');
 
-export const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
+export const capitalize = string =>
+	string.charAt(0).toUpperCase() + string.slice(1);
 
 export const getDataQueryName = type =>
 	// Check is necessary since prisma pluralizes existing plural words
-	isPlural(type.name) ? `${camelCase(type.name)}es` : pluralize(camelCase(type.name));
+	isPlural(type.name)
+		? `${camelCase(type.name)}es`
+		: pluralize(camelCase(type.name));
 
 export const getConnectionQueryName = type =>
 	// Check is necessary since prisma pluralizes existing plural words
@@ -46,7 +51,13 @@ export const getSchemaMainTypes = schema =>
 				!type.name.endsWith('Edge') &&
 				!type.name.endsWith('Connection') &&
 				!type.name.endsWith('SubscriptionPayload') &&
-				!['Query', 'Mutation', 'PageInfo', 'Subscription', 'BatchPayload'].includes(type.name),
+				![
+					'Query',
+					'Mutation',
+					'PageInfo',
+					'Subscription',
+					'BatchPayload',
+				].includes(type.name),
 		)
 		.reduce(function(r, type) {
 			r[kebabCase(type.name)] = type;
@@ -54,17 +65,21 @@ export const getSchemaMainTypes = schema =>
 		}, Object.create(null));
 
 export const getSchemaInputTypes = schema =>
-	schema.types.filter(type => type.kind === 'INPUT_OBJECT').reduce(function(r, type) {
-		r[type.name] = type;
-		return r;
-	}, Object.create(null));
+	schema.types
+		.filter(type => type.kind === 'INPUT_OBJECT')
+		.reduce(function(r, type) {
+			r[type.name] = type;
+			return r;
+		}, Object.create(null));
 
 export const getSchemaEnumTypes = schema =>
 	schema.types
 		.filter(
 			type =>
 				type.kind === 'ENUM' &&
-				!['MutationType', '__DirectiveLocation', '__TypeKind'].includes(type.name) &&
+				!['MutationType', '__DirectiveLocation', '__TypeKind'].includes(
+					type.name,
+				) &&
 				!type.name.endsWith('Input'),
 		)
 		.reduce(function(r, type) {
@@ -90,7 +105,10 @@ export const getListFieldKind = field =>
 export const getEnumFieldValues = (field, schemaEnumFields) => {
 	if (getFieldKind(field) !== 'ENUM') return null;
 
-	const enumName = field.type.kind === 'NON_NULL' ? field.type.ofType.type.name : field.type.name;
+	const enumName =
+		field.type.kind === 'NON_NULL'
+			? field.type.ofType.type.name
+			: field.type.name;
 
 	return schemaEnumFields[enumName].enumValues.map(v => v.name);
 };
@@ -123,14 +141,19 @@ export const buildDataQuery = (type, inputTypes) => {
 				}
                 ${queryName}(first: $first, skip: $skip) {
                     ${type.fields.reduce((r, field) => {
-											if (field.args.length > 0) {
-												const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+						if (field.args.length > 0) {
+							const primaryRelationField = getPrimaryRelationField(
+								field,
+								inputTypes,
+							);
 
-												return `${r}${field.name} { ${primaryRelationField.name} }\n`;
-											}
+							return `${r}${field.name} { ${
+								primaryRelationField.name
+							} }\n`;
+						}
 
-											return `${r}${field.name}\n`;
-										}, '')}
+						return `${r}${field.name}\n`;
+					}, '')}
                 }
             }
 		`;
@@ -143,14 +166,19 @@ export const buildSingleDataQuery = (type, inputTypes) => {
             query singleDataQuery($id: ID) {
                 ${queryName}(where: { id: $id }) {
                     ${type.fields.reduce((r, field) => {
-											if (field.args.length > 0) {
-												const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+						if (field.args.length > 0) {
+							const primaryRelationField = getPrimaryRelationField(
+								field,
+								inputTypes,
+							);
 
-												return `${r}${field.name} { ${primaryRelationField.name} }\n`;
-											}
+							return `${r}${field.name} { ${
+								primaryRelationField.name
+							} }\n`;
+						}
 
-											return `${r}${field.name}\n`;
-										}, '')}
+						return `${r}${field.name}\n`;
+					}, '')}
                 }
             }
 		`;
@@ -165,8 +193,8 @@ export const buildDeleteMutation = type => {
                     id: $id
                 }) {
                     ${type.fields
-											.filter(field => field.args.length === 0)
-											.reduce((r, field) => `${r}${field.name}\n`, '')}
+						.filter(field => field.args.length === 0)
+						.reduce((r, field) => `${r}${field.name}\n`, '')}
                 }
             }
         `;
@@ -175,7 +203,10 @@ export const buildDeleteMutation = type => {
 export const buildCreateMutation = (type, inputTypes) => {
 	const outputFields = `${type.fields.reduce((r, field) => {
 		if (field.args.length > 0) {
-			const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+			const primaryRelationField = getPrimaryRelationField(
+				field,
+				inputTypes,
+			);
 			return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 		}
 
@@ -196,7 +227,10 @@ export const buildCreateMutation = (type, inputTypes) => {
 export const buildUpdateMutation = (type, inputTypes) => {
 	const outputFields = `${type.fields.reduce((r, field) => {
 		if (field.args.length > 0) {
-			const primaryRelationField = getPrimaryRelationField(field, inputTypes);
+			const primaryRelationField = getPrimaryRelationField(
+				field,
+				inputTypes,
+			);
 			return `${r}${field.name} { ${primaryRelationField.name} }\n`;
 		}
 
@@ -216,7 +250,12 @@ export const buildUpdateMutation = (type, inputTypes) => {
 
 export const hasValueChanged = (field, newValue, oldValue) => {
 	if (field.type === 'LIST') {
-		const mappedOldValue = oldValue.map(v => v[field.primaryRelationField.name]);
+		const mappedOldValue = oldValue.map(
+			v =>
+				field.isRelationField && field
+					? v[field.primaryRelationField.name]
+					: v,
+		);
 		const convertedNewValue = newValue.map(
 			v => (['Int', 'Float'].includes(field.listType) ? Number(v) : v),
 		);
@@ -227,7 +266,66 @@ export const hasValueChanged = (field, newValue, oldValue) => {
 		);
 	}
 
-	const convertedNewValue = ['Int', 'Float'].includes(field.type) ? Number(newValue) : newValue;
+	const convertedNewValue = ['Int', 'Float'].includes(field.type)
+		? Number(newValue)
+		: newValue;
 
 	return oldValue !== convertedNewValue;
+};
+
+export const processFormListValues = (newValues, oldValues) =>
+	newValues.map(val => {
+		const newVal = Object.assign({}, val);
+		if (newVal.type === 'LIST') {
+			if (!oldValues) {
+				newVal.value = {
+					added: newVal.value,
+				};
+			} else {
+				const oldListValues = oldValues[newVal.name].map(
+					v =>
+						newVal.isRelationField && val
+							? v[newVal.primaryRelationField.name]
+							: v,
+				);
+				const newListValues = newVal.value;
+				const added = difference(newListValues, oldListValues);
+				const deleted = difference(oldListValues, newListValues);
+
+				newVal.value = {
+					added,
+					deleted,
+				};
+			}
+		}
+
+		return newVal;
+	});
+
+export const getListDataForSending = (
+	value,
+	isRelationField = true,
+	fieldType = null,
+) => {
+	const dataToSend = {};
+	const addAttributeName = isRelationField ? 'connect' : 'set';
+	const deleteAttributeName = isRelationField ? 'disconnect' : 'unset';
+
+	if (value.added.length > 0) {
+		dataToSend[addAttributeName] = isRelationField
+			? value.added.map(id => ({ id }))
+			: value.added.map(
+					v => (['Int', 'Float'].includes(fieldType) ? Number(v) : v),
+			  );
+	}
+
+	if (value.deleted && value.deleted.length > 0) {
+		dataToSend[deleteAttributeName] = isRelationField
+			? value.deleted.map(id => ({ id }))
+			: value.deleted.map(
+					v => (['Int', 'Float'].includes(fieldType) ? Number(v) : v),
+			  );
+	}
+
+	return dataToSend;
 };

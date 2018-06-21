@@ -19,6 +19,8 @@ import {
 	getPrimaryRelationField,
 	getEnumFieldValues,
 	hasValueChanged,
+	processFormListValues,
+	getListDataForSending,
 } from '../../utils';
 
 class DataForm extends Component {
@@ -26,16 +28,25 @@ class DataForm extends Component {
 		super(props);
 		const { type, editData, inputTypes, enumTypes } = props;
 
-		const getEditValue = (fieldName, isRelationField, primaryRelationField) => {
+		const getEditValue = (
+			fieldName,
+			isRelationField,
+			primaryRelationField,
+		) => {
 			if (!editData) return null;
 			const fieldValue = editData[fieldName];
 
 			if (Array.isArray(fieldValue)) {
 				return fieldValue.map(
-					val => (isRelationField && val ? val[primaryRelationField.name] : val),
+					val =>
+						isRelationField && val
+							? val[primaryRelationField.name]
+							: val,
 				);
 			} else {
-				return isRelationField && fieldValue ? fieldValue[primaryRelationField.name] : fieldValue;
+				return isRelationField && fieldValue
+					? fieldValue[primaryRelationField.name]
+					: fieldValue;
 			}
 		};
 
@@ -58,8 +69,11 @@ class DataForm extends Component {
 					},
 					enumValues: getEnumFieldValues(field, enumTypes),
 					value:
-						getEditValue(field.name, isRelationField, primaryRelationField) ||
-						(getFieldKind(field) === 'LIST' ? [] : ''),
+						getEditValue(
+							field.name,
+							isRelationField,
+							primaryRelationField,
+						) || (getFieldKind(field) === 'LIST' ? [] : ''),
 					error: null,
 					isValueChanged: false,
 				});
@@ -85,7 +99,11 @@ class DataForm extends Component {
 	};
 
 	validateValues = field => {
-		if (field.isRequired && field.type !== 'Boolean' && (!field.value || field.value === '')) {
+		if (
+			field.isRequired &&
+			field.type !== 'Boolean' &&
+			(!field.value || field.value === '')
+		) {
 			return 'Field is required';
 		}
 		if (field.type === 'Int' && !Number.isInteger(Number(field.value))) {
@@ -104,7 +122,9 @@ class DataForm extends Component {
 		const updatedFormData = formData.map(field => {
 			if (field.name === name) {
 				field.value = value;
-				field.isValueChanged = isEdit && hasValueChanged(field, value, this.props.editData[name]);
+				field.isValueChanged =
+					isEdit &&
+					hasValueChanged(field, value, this.props.editData[name]);
 				field.error = this.validateValues(field);
 			}
 
@@ -119,6 +139,7 @@ class DataForm extends Component {
 		const { formData, isEdit } = this.state;
 		const {
 			history: { replace },
+			editData,
 			type,
 			id,
 		} = this.props;
@@ -126,34 +147,34 @@ class DataForm extends Component {
 			field.error = this.validateValues(field);
 			return field;
 		});
-		const isFormValid = validatedFormData.filter(field => field.error).length === 0;
+		const isFormValid =
+			validatedFormData.filter(field => field.error).length === 0;
 
 		this.setState({ formData: validatedFormData });
 
 		if (isFormValid) {
 			const variables = {};
-			const filteredFormData = isEdit
-				? validatedFormData.filter(
-						field =>
-							// Include only changed values when editing
-							(isEdit ? field.isValueChanged : true) &&
-							(!field.isRelationField ||
-								// Filter out relation fields without an id while editing
-								// Filter optional relational fields without any value
-								(field.primaryRelationField.name === 'id' && field.value !== '')),
-				  )
-				: validatedFormData;
+			const filteredFormData = validatedFormData.filter(
+				field =>
+					// Include only changed values when editing
+					(isEdit ? field.isValueChanged : true) &&
+					(!field.isRelationField ||
+						// Filter out relation fields without an id while editing
+						// Filter optional relational fields without any value
+						(field.primaryRelationField.name === 'id' &&
+							field.value !== '')),
+			);
+			const formData = processFormListValues(filteredFormData, editData);
 
-			variables.data = filteredFormData.reduce((r, field) => {
+			variables.data = formData.reduce((r, field) => {
 				if (field.isRelationField) {
-					r[field.name] = {
-						connect:
-							field.type === 'LIST'
-								? field.value.map(id => ({ id }))
-								: {
-										id: field.value,
-								  },
-					};
+					if (field.type === 'LIST') {
+						r[field.name] = getListDataForSending(field.value);
+					} else {
+						r[field.name] = {
+							connect: { id: field.value },
+						};
+					}
 				} else {
 					switch (field.type) {
 						case 'Int':
@@ -161,11 +182,11 @@ class DataForm extends Component {
 							r[field.name] = Number(field.value);
 							break;
 						case 'LIST':
-							r[field.name] = {
-								set: field.value.map(
-									v => (['Int', 'Float'].includes(field.listType) ? Number(v) : v),
-								),
-							};
+							r[field.name] = getListDataForSending(
+								field.value,
+								false,
+								field.listType,
+							);
 							break;
 						default:
 							r[field.name] = field.value;
@@ -189,23 +210,34 @@ class DataForm extends Component {
 	render() {
 		const { type, id, editData, inputTypes } = this.props;
 		const { formData, isEdit } = this.state;
-		const hasCreatedAt = type.fields.some(field => field.name === 'createdAt');
-		const hasUpdatedAt = type.fields.some(field => field.name === 'updatedAt');
+		const hasCreatedAt = type.fields.some(
+			field => field.name === 'createdAt',
+		);
+		const hasUpdatedAt = type.fields.some(
+			field => field.name === 'updatedAt',
+		);
 
 		return (
-			<Page.Content title={isEdit ? 'Edit' : 'Create'}>
+			<Page.Content title={`${isEdit ? 'Edit' : 'Create'} ${type.name}`}>
 				<Mutation
 					mutation={
-						isEdit ? buildUpdateMutation(type, inputTypes) : buildCreateMutation(type, inputTypes)
+						isEdit
+							? buildUpdateMutation(type, inputTypes)
+							: buildCreateMutation(type, inputTypes)
 					}
 					update={(cache, { data }) => {
 						if (!isEdit) {
 							const dataQuery = buildDataQuery(type);
 							const queryVariables = { first: LIMIT, skip: 0 };
-							let queryData = cache.readQuery({ query: dataQuery, variables: queryVariables });
+							let queryData = cache.readQuery({
+								query: dataQuery,
+								variables: queryVariables,
+							});
 							const dataFieldName = getDataQueryName(type);
 							const createdFieldName = `create${type.name}`;
-							queryData[dataFieldName] = queryData[dataFieldName].concat([data[createdFieldName]]);
+							queryData[dataFieldName] = queryData[
+								dataFieldName
+							].concat([data[createdFieldName]]);
 							cache.writeQuery({
 								query: dataQuery,
 								data: queryData,
@@ -217,28 +249,52 @@ class DataForm extends Component {
 					{(sendData, { error }) => {
 						return (
 							<Card>
-								{error && <Alert type="danger">Form submission failed</Alert>}
-								<form onSubmit={e => this.handleSubmit(e, sendData)}>
+								{error && (
+									<Alert type="danger">
+										Form submission failed: {error.message}
+									</Alert>
+								)}
+								<form
+									onSubmit={e =>
+										this.handleSubmit(e, sendData)
+									}
+								>
 									<Card.Body>
 										<Grid.Row>
 											{isEdit && (
 												<Fragment>
 													<Grid.Col width={4}>
 														<Form.Group label="ID">
-															<Form.Input name="id" value={id} disabled />
+															<Form.Input
+																name="id"
+																value={id}
+																disabled
+															/>
 														</Form.Group>
 													</Grid.Col>
 													{hasCreatedAt && (
 														<Grid.Col width={4}>
 															<Form.Group label="Created At">
-																<Form.Input name="createdAt" value={editData.createdAt} disabled />
+																<Form.Input
+																	name="createdAt"
+																	value={
+																		editData.createdAt
+																	}
+																	disabled
+																/>
 															</Form.Group>
 														</Grid.Col>
 													)}
 													{hasUpdatedAt && (
 														<Grid.Col width={4}>
 															<Form.Group label="Updated At">
-																<Form.Input name="updatedAt" value={editData.updatedAt} disabled />
+																<Form.Input
+																	name="updatedAt"
+																	value={
+																		editData.updatedAt
+																	}
+																	disabled
+																/>
 															</Form.Group>
 														</Grid.Col>
 													)}
@@ -247,7 +303,9 @@ class DataForm extends Component {
 											<FormBody
 												formData={formData}
 												isEdit={isEdit}
-												onFieldChange={this.onFieldChange}
+												onFieldChange={
+													this.onFieldChange
+												}
 											/>
 										</Grid.Row>
 									</Card.Body>
