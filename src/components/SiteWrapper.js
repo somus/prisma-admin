@@ -6,7 +6,7 @@ import { Site, Nav, Grid, Button } from 'tabler-react';
 
 import { kebabCase } from '../utils';
 
-const LinkComponent = props => <NavLink exact {...props} />;
+const LinkComponent = props => <NavLink {...props} />;
 
 const buildNavbarItems = navBarItems => [
 	{ value: 'Home', to: '/', icon: 'home', LinkComponent },

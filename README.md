@@ -1,5 +1,5 @@
 # Prisma Admin
-A clean admin panel UI to manage prisma's graphql API data.
+A clean GUI to manage prisma's graphql API data.
 
 ![Prisma admin screenshot](https://raw.githubusercontent.com/somus/prisma-admin/master/screenshot.png)
 
@@ -26,5 +26,4 @@ yarn start
 ```
 
 ### TODO
-- [ ] Add support for adding and deleting data from list fields
 - [ ] Add tests

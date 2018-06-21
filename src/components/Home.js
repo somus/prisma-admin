@@ -8,7 +8,7 @@ function Home() {
 			<Card>
 				<Card.Body>
 					<h2>Prisma Admin</h2>
-					<p>A clean admin panel UI to manage prisma's graphql API data.</p>
+					<p>A clean GUI to manage prisma's graphql API data.</p>
 					<h3>Motivation</h3>
 					<p>
 						I recently started learning graphql and was playing around with it. So, I eventually
