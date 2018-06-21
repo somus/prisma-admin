@@ -2,7 +2,7 @@ import * as React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter, NavLink } from 'react-router-dom';
 
-import { Site, Nav, Grid, Button } from 'tabler-react';
+import { Site, Form, Grid, Button } from 'tabler-react';
 
 import { kebabCase } from '../utils';
 
@@ -17,25 +17,20 @@ const buildNavbarItems = navBarItems => [
 	})),
 ];
 
-function SiteWrapper({ navBarItems, children }) {
+function SiteWrapper({ navBarItems, prismaEndpoint, children }) {
 	return (
 		<Site.Wrapper
 			headerProps={{
 				href: '/',
-				children: 'Prisma Admin',
-				navItems: (
-					<Nav.Item type="div" className="d-none d-md-flex">
-						<Button
-							href="https://github.com/somus/prisma-admin"
-							target="_blank"
-							outline
-							size="sm"
-							RootComponent="a"
-							color="primary"
-						>
-							Source code
-						</Button>
-					</Nav.Item>
+				children: (
+					<React.Fragment>
+						<p className="mv-auto">Prisma Admin</p>
+						<Form.Input
+							className="ml-auto w-50"
+							disabled
+							value={prismaEndpoint}
+						/>
+					</React.Fragment>
 				),
 			}}
 			navProps={{
@@ -73,6 +68,7 @@ function SiteWrapper({ navBarItems, children }) {
 
 SiteWrapper.propTypes = {
 	navBarItems: PropTypes.array,
+	prismaEndpoint: PropTypes.string.isRequired,
 };
 
 SiteWrapper.defaultProps = {

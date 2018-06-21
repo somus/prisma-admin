@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Switch, Route } from 'react-router-dom';
 import { introspectionQuery } from 'graphql/utilities/introspectionQuery';
 import { Query } from 'react-apollo';
@@ -13,9 +14,13 @@ import List from './List/List';
 import Form from './Form/Form';
 import EditForm from './EditForm';
 
-import { getSchemaMainTypes, getSchemaInputTypes, getSchemaEnumTypes } from '../utils';
+import {
+	getSchemaMainTypes,
+	getSchemaInputTypes,
+	getSchemaEnumTypes,
+} from '../utils';
 
-function App() {
+function App({ prismaEndpoint }) {
 	const INTROSPECTION_QUERY = gql`
 		${introspectionQuery}
 	`;
@@ -26,8 +31,14 @@ function App() {
 				if (loading || error) {
 					return (
 						<Dimmer loader active={loading}>
-							<SiteWrapper>
-								<Page.Content>{error && <Alert type="danger">{error.message}</Alert>}</Page.Content>
+							<SiteWrapper prismaEndpoint={prismaEndpoint}>
+								<Page.Content>
+									{error && (
+										<Alert type="danger">
+											{error.message}
+										</Alert>
+									)}
+								</Page.Content>
 							</SiteWrapper>
 						</Dimmer>
 					);
@@ -36,10 +47,15 @@ function App() {
 				const mainTypes = getSchemaMainTypes(data.__schema);
 				const inputTypes = getSchemaInputTypes(data.__schema);
 				const enumTypes = getSchemaEnumTypes(data.__schema);
-				const navBarItems = Object.values(mainTypes).map(type => type.name);
+				const navBarItems = Object.values(mainTypes).map(
+					type => type.name,
+				);
 
 				return (
-					<SiteWrapper navBarItems={navBarItems}>
+					<SiteWrapper
+						navBarItems={navBarItems}
+						prismaEndpoint={prismaEndpoint}
+					>
 						<Switch>
 							<Route exact path="/" component={Home} />
 							<Route
@@ -48,7 +64,9 @@ function App() {
 								render={props => (
 									<List
 										{...props}
-										type={mainTypes[props.match.params.type]}
+										type={
+											mainTypes[props.match.params.type]
+										}
 										inputTypes={inputTypes}
 									/>
 								)}
@@ -59,7 +77,9 @@ function App() {
 								render={props => (
 									<Form
 										{...props}
-										type={mainTypes[props.match.params.type]}
+										type={
+											mainTypes[props.match.params.type]
+										}
 										inputTypes={inputTypes}
 										enumTypes={enumTypes}
 									/>
@@ -71,7 +91,9 @@ function App() {
 								render={props => (
 									<EditForm
 										{...props}
-										type={mainTypes[props.match.params.type]}
+										type={
+											mainTypes[props.match.params.type]
+										}
 										id={props.match.params.id}
 										inputTypes={inputTypes}
 										enumTypes={enumTypes}
@@ -85,5 +107,9 @@ function App() {
 		</Query>
 	);
 }
+
+App.propTypes = {
+	prismaEndpoint: PropTypes.string.isRequired,
+};
 
 export default App;

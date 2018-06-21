@@ -10,9 +10,10 @@ import { HttpLink } from 'apollo-link-http';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 
 const { PRISMA_ENDPOINT, PRISMA_TOKEN } = window.env || {};
+const uri = PRISMA_ENDPOINT || 'https://eu1.prisma.sh/lol/homepage-snippets/dev';
 
 const httpLink = new HttpLink({
-	uri: PRISMA_ENDPOINT || 'https://eu1.prisma.sh/lol/homepage-snippets/dev',
+	uri,
 	headers: PRISMA_TOKEN ? { Authorization: PRISMA_TOKEN } : {},
 });
 
@@ -24,7 +25,7 @@ const client = new ApolloClient({
 ReactDOM.render(
 	<BrowserRouter>
 		<ApolloProvider client={client}>
-			<App />
+			<App prismaEndpoint={uri} />
 		</ApolloProvider>
 	</BrowserRouter>,
 	document.getElementById('root'),

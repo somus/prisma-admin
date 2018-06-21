@@ -12,6 +12,14 @@ body {
 	overflow-x: auto;
 }
 
+.w-50 {
+	width: 50%;
+}
+
+.mv-auto {
+	margin: auto 0;
+}
+
 .tags-input {
 	padding: 0.125rem 0.75rem !important;
 }
